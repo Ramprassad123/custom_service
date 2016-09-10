@@ -78,6 +78,7 @@
 	
 	drupal_add_http_header('Content-Type', 'application/json');
 	
+	//Return the results if the service requests via GET else return dummpy results for POST and DELETE
 	switch($_SERVER['REQUEST_METHOD']){
 		case 'GET':
 			if(!empty($_GET['search-term'])){
