@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * Implementation of hook_init()
+ * Protects all drupal pages with API key but allows /user and admin paths
+ */
+ 
+ function custom_service_init(){
+ 	
+ 	if(arg(0)!='user' && !path_is_admin(current_path())){
+ 		if(isset($_GET['api_key'])){
+	 		if(custom_service_is_valid_apikey()){
+	 			custom_service_search_and_return_results();
+	 		}else{
+	 			echo t("Invalid API key");exit;	
+	 		}
+	 	}else{
+ 			echo t("Missing API key");exit;
+ 		}
+ 	}
+ }
+ 
+/**
+ * Implementation of hook_menu
+ */
+ function custom_service_menu(){
+ 	$items = array();
+ 	$items['admin/config/content/custom-api-keys'] = array(
+ 		'title'=>t('API Keys configuration form'),
+		'page callback'=>'drupal_get_form',
+		'page arguments'=>array('custom_service_config_api_keys'),
+		'access arguments'=>array('administer content'),
+		'type'=>MENU_NORMAL_ITEM
+	);
+	return $items;
+ }
+ 
+/**
+ * Settings form for configuring the list of valid api keys to access the site
+ */
+ function custom_service_config_api_keys(){
+  $form['api_keys_list'] = array(
+    '#type' => 'textarea',
+    '#rows'=>5,
+    '#cols'=>4,
+    '#title' => t('Enter the list of Api keys'),
+    '#description'=>t('Provide the list of Api keys to be configured for the site'),
+    '#default_value'=>variable_get('api_keys_list',''),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Funtion with the logic for validating the API keys
+ */
+ 
+ function custom_service_is_valid_apikey(){
+	$valid_api_keys = variable_get('api_keys_list',array());
+	if(!empty($valid_api_keys)){
+		$api_key = filter_xss($_GET['api_key']);
+		$arr_valid_api_keys = explode("\r\n",variable_get('api_keys_list',''));
+		if(is_array($arr_valid_api_keys)){
+			if(in_array($api_key, $arr_valid_api_keys)){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+ }
+
+ /**
+  * Function which queries all the matched page nodes
+  * and returns the service response
+  */
+  function custom_service_search_and_return_results(){
+  	$arr_result['results'] = array();
+	
+	drupal_add_http_header('Content-Type', 'application/json');
+	
+	switch($_SERVER['REQUEST_METHOD']){
+		case 'GET':
+			if(!empty($_GET['search-term'])){
+		  			
+				$search_term = filter_xss($_GET['search-term']);
+					
+		  		$query = new EntityFieldQuery();
+				
+			  	$query->entityCondition('entity_type', 'node')
+			  	->entityCondition('bundle', 'page')
+			  	->propertyCondition('status', NODE_PUBLISHED)
+				->propertyCondition('title', $search_term,'CONTAINS');
+
+				$result = $query->execute();
+				
+				foreach($result['node'] as $obj_node){
+					$node = node_load($obj_node->nid);
+					$arr_result['results'][] = array('title'=>$node->title,'body'=>$node->body['und'][0]['value']);
+				}
+				
+		  	}else{
+		  		echo t('Missing search term'); exit;
+		  	}
+			break;
+		case 'POST':
+		case 'DELETE':
+			$arr_result['results'][] = t("Dummy result");
+			break;
+		default:
+			$arr_result['results'][] = t("Invalid request");
+			break;
+	}
+  	echo json_encode($arr_result); exit;
+  }
+ 

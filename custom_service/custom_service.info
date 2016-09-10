@@ -1,0 +1,5 @@
+name = Custom service
+description = Module to validate third party request and provide a service response.
+package = custom
+core = 7.x
+version = 7.x
