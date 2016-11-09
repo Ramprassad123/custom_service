@@ -9,6 +9,7 @@
  	
  	if(arg(0)!='user' && !path_is_admin(current_path())){
  		if(isset($_GET['api_key'])){
+			//Checking for the valid api key
 	 		if(custom_service_is_valid_apikey()){
 	 			custom_service_search_and_return_results();
 	 		}else{
