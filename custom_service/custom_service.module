@@ -2,7 +2,7 @@
 
 /**
  * Implementation of hook_init()
- * Protects all drupal pages with API key but allows /user and admin paths
+ * Protects all drupal pages with API key but allows /user and admin paths 
  */
  
  function custom_service_init(){
