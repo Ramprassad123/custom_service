@@ -8,6 +8,7 @@
  function custom_service_init(){
  	
  	if(arg(0)!='user' && !path_is_admin(current_path())){
+		//added below to check api key
  		if(isset($_GET['api_key'])){
 	 		if(custom_service_is_valid_apikey()){
 	 			custom_service_search_and_return_results();
